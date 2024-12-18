@@ -1,0 +1,228 @@
+﻿ORG 100 / PROGRAM AT ADDRESS AT 100
+
+INPUT           / FIRST INPUT FROM USER (DEC TYPE INPUT)
+STORE NumberInput1   / STORE THIS NUMBER1 INPUT
+
+INPUT           / GET OPERATOR AS ASCII CHARACTER (CHANGE TO UNICODE TYPE WHEN INPUT)
+STORE OperatorInput  / STORE OP IN MEMORY LOCATION
+
+INPUT           / GET SECOND INPUT FROM USER (CHANGE BACK TO DEC)
+STORE NumberInput2   / STORE THIS NUMBER2 INPUT
+
+/ CALCULATE 2'S COMPLEMENT OF NumberInput2 FOR SUBTRACTION
+LOAD ZERO
+SUBT NumberInput2
+STORE NEGATIVENUMBER2
+
+/ CHECK THE OPERATOR INPUT AND PERFORM THE CORRESPONDING OPERATION VIA JUMPS
+
+/ ADDITION CHECK
+LOAD OperatorInput
+SUBT PLUS
+SKIPCOND 400
+JUMP CheckMinus
+JUMP ADDITION
+
+/ CHECK SUBTRACTION
+CheckMinus, LOAD OperatorInput
+SUBT MINUS
+SKIPCOND 400
+JUMP CheckMultiply
+JUMP SUBTRACTION
+
+/ CHECK MULTIPLICATION
+CheckMultiply, LOAD OperatorInput
+SUBT MULTIPLY
+SKIPCOND 400
+JUMP CheckDivide
+JUMP MULTIPLICATION
+
+/ CHECK DIVISION
+CheckDivide, LOAD OperatorInput
+SUBT DIVIDE
+SKIPCOND 400
+JUMP HandleInvalid
+JUMP DIVISION
+
+/ INVALID CHECK (SHOULD DISPLAY 0)
+HandleInvalid, LOAD ZERO
+STORE RESULT
+JUMP DISPLAY
+
+/ ADDITION FUNCTION
+ADDITION, LOAD NumberInput1
+ADD NumberInput2
+STORE RESULT
+JUMP DISPLAY
+
+/ SUBTRACTION FUNCTION
+SUBTRACTION, LOAD NumberInput1
+ADD NEGATIVENUMBER2
+STORE RESULT
+JUMP DISPLAY
+
+/ MULTIPLICATION FUNCTION
+MULTIPLICATION, LOAD ZERO
+STORE RESULT
+
+/ Determine sign of NumberInput1
+LOAD NumberInput1
+SKIPCOND 000          / Skip next instruction if AC < 0
+JUMP Num1Positive_Mul
+LOAD ONE
+STORE SIGN1           / SIGN1 = 1 (NumberInput1 negative)
+LOAD ZERO
+SUBT NumberInput1     / AC = -NumberInput1
+STORE ABSNUM1         / Store abs(NumberInput1)
+JUMP CheckNum2_Mul
+
+Num1Positive_Mul, LOAD ZERO
+STORE SIGN1           / SIGN1 = 0 (NumberInput1 positive)
+LOAD NumberInput1
+STORE ABSNUM1
+
+/ Determine sign of NumberInput2
+CheckNum2_Mul, LOAD NumberInput2
+SKIPCOND 000          / Skip next instruction if AC < 0
+JUMP Num2Positive_Mul
+LOAD ONE
+STORE SIGN2           / SIGN2 = 1 (NumberInput2 negative)
+LOAD ZERO
+SUBT NumberInput2     / AC = -NumberInput2
+STORE ABSNUM2         / Store abs(NumberInput2)
+JUMP DoMultiplication_Mul
+
+Num2Positive_Mul, LOAD ZERO
+STORE SIGN2           / SIGN2 = 0 (NumberInput2 positive)
+LOAD NumberInput2
+STORE ABSNUM2
+
+/ Perform multiplication using absolute values
+DoMultiplication_Mul, LOAD ABSNUM2
+STORE COUNTER
+
+LOAD COUNTER
+SKIPCOND 400          / If COUNTER == 0, skip next instruction
+JUMP MultiplyLoop
+JUMP MultiplicationDone
+
+MultiplyLoop, LOAD RESULT
+ADD ABSNUM1           / Add ABSNUM1 to RESULT
+STORE RESULT
+LOAD COUNTER
+SUBT ONE              / Decrease COUNTER by 1
+STORE COUNTER
+LOAD COUNTER
+SKIPCOND 400          / If COUNTER != 0, continue loop
+JUMP MultiplyLoop
+
+MultiplicationDone, LOAD SIGN1
+SUBT SIGN2
+SKIPCOND 400          / Skip next instruction if AC == 0 (SIGN1 == SIGN2)
+JUMP ApplyNegativeSign_Mul
+JUMP DISPLAY
+
+ApplyNegativeSign_Mul, LOAD ZERO
+SUBT RESULT           / RESULT = -RESULT
+STORE RESULT
+JUMP DISPLAY
+
+/ DIVISION FUNCTION
+DIVISION, LOAD ZERO
+STORE RESULT
+
+/ Determine sign of NumberInput1
+LOAD NumberInput1
+SKIPCOND 000          / Skip next instruction if AC < 0
+JUMP Num1Positive_Div
+LOAD ONE
+STORE SIGN1           / SIGN1 = 1 (NumberInput1 negative)
+LOAD ZERO
+SUBT NumberInput1     / AC = -NumberInput1
+STORE ABSNUM1         / ABSNUM1 = abs(NumberInput1)
+JUMP CheckNum2_Div
+
+Num1Positive_Div, LOAD ZERO
+STORE SIGN1           / SIGN1 = 0 (NumberInput1 positive)
+LOAD NumberInput1
+STORE ABSNUM1         / ABSNUM1 = NumberInput1
+
+/ Determine sign of NumberInput2
+CheckNum2_Div, LOAD NumberInput2
+SKIPCOND 000          / Skip next instruction if AC < 0
+JUMP Num2Positive_Div
+LOAD ONE
+STORE SIGN2           / SIGN2 = 1 (NumberInput2 negative)
+LOAD ZERO
+SUBT NumberInput2     / AC = -NumberInput2
+STORE ABSNUM2         / ABSNUM2 = abs(NumberInput2)
+JUMP CheckDivByZero
+
+Num2Positive_Div, LOAD ZERO
+STORE SIGN2           / SIGN2 = 0 (NumberInput2 positive)
+LOAD NumberInput2
+STORE ABSNUM2         / ABSNUM2 = NumberInput2
+
+/ Check for division by zero
+CheckDivByZero, LOAD ABSNUM2
+SKIPCOND 400          / Skip next instruction if AC == 0 (divisor == 0)
+JUMP PerformDivision
+JUMP DivisionByZero
+
+DivisionByZero, LOAD ZERO
+STORE RESULT
+JUMP DISPLAY
+
+/ Perform division via repeated subtraction
+PerformDivision, LOAD ABSNUM1    / Dividend in AC
+STORE DIVIDEND
+LOAD ZERO
+STORE RESULT          / Initialize RESULT to zero
+
+DivisionLoop, LOAD DIVIDEND
+SUBT ABSNUM2
+SKIPCOND 000          / Skip next instruction if AC < 0
+JUMP SubtractDivisor
+JUMP DivisionDone
+
+SubtractDivisor, STORE DIVIDEND   / Update DIVIDEND
+LOAD RESULT
+ADD ONE
+STORE RESULT          / Increment RESULT
+JUMP DivisionLoop
+
+DivisionDone, LOAD SIGN1
+SUBT SIGN2
+SKIPCOND 400          / Skip next instruction if AC == 0 (SIGN1 == SIGN2)
+JUMP ApplyNegativeSign_Div
+JUMP DISPLAY
+
+ApplyNegativeSign_Div, LOAD ZERO
+SUBT RESULT
+STORE RESULT
+JUMP DISPLAY
+
+/ DISPLAY THE RESULTS
+DISPLAY, LOAD RESULT
+OUTPUT
+HALT
+
+/ DATA VALUES SECTION
+/https://www.ascii-code.com
+PLUS,          DEC 43    / ASCII code for '+' HEX:  2B
+MINUS,         DEC 45    / ASCII code for '-' HEX: 2D
+MULTIPLY,      DEC 42    / ASCII code for '*' HEX: 2A
+DIVIDE,        DEC 47    / ASCII code for '/' HEX: 2F
+NumberInput1,  DEC 0
+NumberInput2,  DEC 0
+NEGATIVENUMBER2, DEC 0   / Used in subtraction
+OperatorInput, DEC 0
+RESULT,        DEC 0
+COUNTER,       DEC 0
+ONE,           DEC 1
+ZERO,          DEC 0
+SIGN1,         DEC 0
+SIGN2,         DEC 0
+ABSNUM1,       DEC 0
+ABSNUM2,       DEC 0
+DIVIDEND,      DEC 0
