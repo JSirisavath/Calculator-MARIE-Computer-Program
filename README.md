@@ -1,4 +1,5 @@
-# Calculator-Mair-Program
+# MARIE-Computer-Program 
+# Integer Calculator
 This is a simple calculator program using the MARIE computer, a basic CPU simulator. The script was created through "MARIE.JS". 
 
 
